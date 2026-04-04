@@ -11,6 +11,10 @@
 
 \item{...}{Additional arguments (not used).}
 }
+\value{
+No return value, called for side effects. Prints a formatted table
+  of NCM group results to the console.
+}
 \description{
 Print summary of NCM group results
 }

@@ -181,7 +181,7 @@ fit_ncm <- function(otu, grp = NULL, group_col = "group", groups = NULL,
   }
 
   if (is.null(grp)) {
-    cat("Fitting NCM on all samples (no grouping).\n")
+    message("Fitting NCM on all samples (no grouping).\n")
     return(fit_one(otu, group_name = NULL, ...))
   }
 
@@ -216,7 +216,7 @@ fit_ncm <- function(otu, grp = NULL, group_col = "group", groups = NULL,
   result_list <- list()
 
   if (fit_total) {
-    cat("Fitting NCM for all samples combined (total).\n")
+    message("Fitting NCM for all samples combined (total).\n")
     total_fit <- fit_one(otu, group_name = "all", ...)
     if (!is.null(total_fit)) {
       result_list[["all"]] <- total_fit
@@ -228,7 +228,7 @@ fit_ncm <- function(otu, grp = NULL, group_col = "group", groups = NULL,
   for (g in groups_to_use) {
     samples_in_group <- rownames(grp)[grp[[group_col]] == g]
     spp_mat <- otu[samples_in_group, , drop = FALSE]
-    cat("Fitting NCM for group:", g, " (", length(samples_in_group), " samples)\n")
+    message("Fitting NCM for group:", g, " (", length(samples_in_group), " samples)\n")
     fit_res <- fit_one(spp_mat, group_name = g, ...)
     if (!is.null(fit_res)) {
       result_list[[g]] <- fit_res
@@ -274,6 +274,8 @@ summary.NCM <- function(object, ...) {
 #'
 #' @param x An object of class "summary_ncm".
 #' @param ... Additional arguments (not used).
+#' @return No return value, called for side effects. Prints a formatted table
+#'   of NCM results to the console.
 #' @export
 print.summary_ncm <- function(x, ...) {
   cat("\nNeutral Community Model\n")
@@ -318,6 +320,8 @@ summary.NCM_group <- function(object, ...) {
 #'
 #' @param x An object of class "summary_ncm_group".
 #' @param ... Additional arguments (not used).
+#' @return No return value, called for side effects. Prints a formatted table
+#'   of NCM group results to the console.
 #' @export
 print.summary_ncm_group <- function(x, ...) {
   cat("\nNeutral Community Model - Group Summary\n")

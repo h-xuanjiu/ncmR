@@ -8,8 +8,8 @@ Authors@R: c(
   )
 Description: Provides tools for fitting the neutral community model (NCM) to 
     assess the role of stochastic processes in community assembly. The package 
-    implements the framework of Sloan et al. (2006), enabling users to evaluate 
-    neutral dynamics in ecological and microbial communities.
+    implements the framework of Sloan et al. (2006) <doi:10.1111/j.1462-2920.2005.00956.x>,
+    enabling users to evaluate neutral dynamics in ecological and microbial communities.
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
@@ -20,3 +20,4 @@ Imports:
     Hmisc,
     minpack.lm
 RoxygenNote: 7.3.3
+References: Sloan WT, Lunn M, Woodcock S, et al. (2006) <doi:10.1111/j.1462-2920.2005.00956.x>
