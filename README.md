@@ -2,6 +2,8 @@
 # ncmR
 
 <!-- badges: start -->
+[![License](https://img.shields.io/badge/license-GPL%20%3E%3D%203-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![Last Commit](https://img.shields.io/github/last-commit/h-xuanjiu/ncmR)](https://github.com/h-xuanjiu/ncmR)
 <!-- badges: end -->
 
 
