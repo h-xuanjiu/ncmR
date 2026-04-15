@@ -1,3 +1,11 @@
+# ncmR 0.2.0 (2026-04-15)
+
+## NEW FEATURES
+
+-   Added function `scatter_plot`: NCM scatter plot with fitted curve and CI.
+-   Added function `print.unicode_ggplot`: Enables Unicode display when printing plots.
+-   Added function `ggsave_unicode`: Saves plots with full Unicode support.
+
 # ncmR 0.1.0 (2026-04-01)
 
   * Initial CRAN submission.

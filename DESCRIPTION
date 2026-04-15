@@ -1,7 +1,7 @@
 Package: ncmR
 Type: Package
 Title: Fit Neutral Community Model to Microbiome or Ecological Data
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: c(
     person("Yuxuan", "He", , "heyuxuan0525@outlook.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0009-0007-1149-5554"))
@@ -17,7 +17,10 @@ Depends:
     R (>= 3.5)
 Imports: 
     dplyr,
+    ggplot2 (>= 4.0.0),
+    ggtext,
     Hmisc,
-    minpack.lm
+    minpack.lm,
+    showtext
 RoxygenNote: 7.3.3
 URL: https://github.com/h-xuanjiu/ncmR
