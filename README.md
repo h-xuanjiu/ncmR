@@ -28,4 +28,12 @@ install.packages("ncmR")
 remotes::install_github("h-xuanjiu/ncmR")
 ```
 
+## Shiny App
 
+```r
+# Load package
+library(ncmR)
+
+# Start Shiny app in browser
+run_app()
+```
