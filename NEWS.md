@@ -1,3 +1,10 @@
+# ncmR 0.3.0 (2026-04-19)
+
+## NEW FEATURES
+
+-   feat: add Shiny application with Fit NCM and Plotting modules
+
+
 # ncmR 0.2.0 (2026-04-15)
 
 ## NEW FEATURES

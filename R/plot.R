@@ -1,6 +1,15 @@
 utils::globalVariables(c("freq", "freq.pred", "lower", "upper", "x", "y"))
 #' @importFrom dplyr %>%
 NULL
+#' @importFrom DT DTOutput
+NULL
+#' @importFrom bslib bs_theme
+NULL
+#' @importFrom shinyjs useShinyjs
+NULL
+#' @importFrom zip zipr
+NULL
+
 #'
 #' Scatter plot for NCM results and data frames
 #'
@@ -151,32 +160,28 @@ scatter_plot.NCM <- function(
       TRUE ~ "Neutral"
     ))
 
-  make_legend_html <- function(data, title) {
+  make_legend_html <- function(data, title, point_colors) {
     perc <- prop.table(table(data)) * 100
-    if (is.na(title)) {
-      title <- ""
+    if (is.na(title)) title <- ""
+
+    line_span <- function(color, label, pct) {
+      paste0(
+        "<span style='color:", color, ";'>",
+        label, "  ", sprintf("%.2f", pct), "%",
+        "</span>"
+      )
     }
+
     paste0(
-      "<p style='white-space:pre;'>",
-      "<b style='font-size: 25px;'>", title, "</b><br>",
-      "<span style='color:", point_colors["Neutral"], ";'>&#x25CF;</span> Neutral&#12288; ", sprintf("%.2f", perc["Neutral"]), "%<br>",
-      "<span style='color:", point_colors["Below"], ";'>&#x25CF;</span> Below&#12288; ", sprintf("%.2f", perc["Below"]), "%<br>",
-      "<span style='color:", point_colors["Above"], ";'>&#x25CF;</span> Above&#12288; ", sprintf("%.2f", perc["Above"]), "%",
+      "<p style='margin:0; white-space:pre;'>",
+      "<b style='font-size:25px;'>", title, "</b><br>",
+      line_span(point_colors["Neutral"], "Neutral", perc["Neutral"]), "<br>",
+      line_span(point_colors["Below"], "Below", perc["Below"]), "<br>",
+      line_span(point_colors["Above"], "Above", perc["Above"]),
       "</p>"
     )
   }
 
-  showtext::showtext_begin()
-  on.exit(showtext::showtext_end(), add = TRUE)
-
-  if (!isTRUE(getOption("unicode_msg_shown"))) {
-    message(
-      "Note: If you find that dots or legends in saved plots are rendered incorrectly ",
-      "(e.g., as squares or missing), please use `ggsave_unicode()` instead of `ggsave()` ",
-      "to save your plot. This message will only appear once per session."
-    )
-    options(unicode_msg_shown = TRUE)
-  }
 
   p <- ggplot2::ggplot(plotdata, ggplot2::aes(x = log10(p), y = freq)) +
     ggplot2::geom_point(ggplot2::aes(colour = status), alpha = point_alpha, size = point_size) +
@@ -227,7 +232,7 @@ scatter_plot.NCM <- function(
     ) +
     ggtext::geom_richtext(
       data = data.frame(x = legend_position_data[1], y = legend_position_data[2]),
-      ggplot2::aes(x = x, y = y, label = make_legend_html(plotdata$status, legend_title_text)),
+      ggplot2::aes(x = x, y = y, label = make_legend_html(plotdata$status, legend_title_text, point_colors)),
       hjust = legend_hjust, vjust = legend_vjust,
       size = legend_size, family = font_family,
       fill = NA, label.color = NA
@@ -364,32 +369,28 @@ scatter_plot.data.frame <- function(
       TRUE ~ "Neutral"
     ))
 
-  make_legend_html <- function(data, title) {
+  make_legend_html <- function(data, title, point_colors) {
     perc <- prop.table(table(data)) * 100
-    if (is.na(title)) {
-      title <- ""
+    if (is.na(title)) title <- ""
+
+    line_span <- function(color, label, pct) {
+      paste0(
+        "<span style='color:", color, ";'>",
+        label, "  ", sprintf("%.2f", pct), "%",
+        "</span>"
+      )
     }
+
     paste0(
-      "<p style='white-space:pre;'>",
-      "<b style='font-size: 25px;'>", title, "</b><br>",
-      "<span style='color:", point_colors["Neutral"], ";'>&#x25CF;</span> Neutral&#12288; ", sprintf("%.2f", perc["Neutral"]), "%<br>",
-      "<span style='color:", point_colors["Below"], ";'>&#x25CF;</span> Below&#12288; ", sprintf("%.2f", perc["Below"]), "%<br>",
-      "<span style='color:", point_colors["Above"], ";'>&#x25CF;</span> Above&#12288; ", sprintf("%.2f", perc["Above"]), "%",
+      "<p style='margin:0; white-space:pre;'>",
+      "<b style='font-size:25px;'>", title, "</b><br>",
+      line_span(point_colors["Neutral"], "Neutral", perc["Neutral"]), "<br>",
+      line_span(point_colors["Below"], "Below", perc["Below"]), "<br>",
+      line_span(point_colors["Above"], "Above", perc["Above"]),
       "</p>"
     )
   }
 
-  showtext::showtext_begin()
-  on.exit(showtext::showtext_end(), add = TRUE)
-
-  if (!isTRUE(getOption("unicode_msg_shown"))) {
-    message(
-      "Note: If you find that dots or legends in saved plots are rendered incorrectly ",
-      "(e.g., as squares or missing), please use `ggsave_unicode()` instead of `ggsave()` ",
-      "to save your plot. This message will only appear once per session."
-    )
-    options(unicode_msg_shown = TRUE)
-  }
 
   p <- ggplot2::ggplot(plotdata, ggplot2::aes(x = log10(p), y = freq)) +
     ggplot2::geom_point(ggplot2::aes(colour = status), alpha = point_alpha, size = point_size) +
@@ -440,7 +441,7 @@ scatter_plot.data.frame <- function(
     ) +
     ggtext::geom_richtext(
       data = data.frame(x = legend_position_data[1], y = legend_position_data[2]),
-      ggplot2::aes(x = x, y = y, label = make_legend_html(plotdata$status, legend_title_text)),
+      ggplot2::aes(x = x, y = y, label = make_legend_html(plotdata$status, legend_title_text, point_colors)),
       hjust = legend_hjust, vjust = legend_vjust,
       size = legend_size, family = font_family,
       fill = NA, label.color = NA
@@ -457,86 +458,3 @@ scatter_plot.default <- function(object, ...) {
 }
 
 
-
-#' Print a unicode_ggplot object with automatic showtext support
-#'
-#' @description
-#' This method temporarily activates the \pkg{showtext} graphics engine to
-#' ensure that Unicode characters (e.g., Chinese, special symbols) are rendered
-#' correctly when the plot is displayed. After printing, the original graphics
-#' device state is restored.
-#'
-#' @param x A \code{unicode_ggplot} object (a \code{ggplot} with an extra class).
-#' @param ... Additional arguments passed to the next print method (e.g., to
-#'   \code{print.ggplot}).
-#'
-#' @return The input object \code{x}, returned invisibly.
-#'
-#' @details
-#' The method calls \code{showtext::showtext_begin()}, then uses
-#' \code{NextMethod()} to invoke the original \code{print.ggplot} method,
-#' which actually draws the plot. Finally, \code{showtext::showtext_end()}
-#' is called to restore the device. This all happens automatically when a
-#' \code{unicode_ggplot} object is printed (e.g., when its name is typed at
-#' the console or when \code{print()} is explicitly called).
-#'
-#' @seealso \code{\link{scatter_plot}} for creating such objects,
-#'   \code{\link{ggsave_unicode}} for saving them with Unicode support.
-#'
-#' @examples
-#' \dontrun{
-#' p <- scatter_plot(...)   # returns a unicode_ggplot object
-#' p                             # automatically uses this print method
-#' }
-#'
-#' @export
-print.unicode_ggplot <- function(x, ...) {
-  showtext::showtext_begin()
-  on.exit(showtext::showtext_end(), add = TRUE)
-  NextMethod()
-  invisible(x)
-}
-
-
-
-#' Save a ggplot with Unicode support using showtext
-#'
-#' @description
-#' This function is a wrapper around \code{ggplot2::ggsave()} that temporarily
-#' activates the \pkg{showtext} graphics engine before saving. It ensures that
-#' Unicode characters (e.g., Chinese, special symbols) are rendered correctly
-#' in the saved file, regardless of the output format (vector or raster).
-#'
-#' @param plot The ggplot object to save (should be a \code{unicode_ggplot} or any
-#'   \code{ggplot} object).
-#' @param filename File name to save the plot. Extension determines the format
-#'   (e.g., .png, .pdf, .svg).
-#' @param ... Additional arguments passed to \code{ggplot2::ggsave()}, such as
-#'   \code{width}, \code{height}, \code{dpi}, \code{units}, etc.
-#'
-#' @return Invisibly returns the filename (as \code{ggsave} does).
-#'
-#' @details
-#' The function calls \code{showtext::showtext_begin()} before saving and
-#' ensures \code{showtext::showtext_end()} is called afterwards, even if an
-#' error occurs. It then passes all arguments to \code{ggplot2::ggsave()}.
-#'
-#' @seealso \code{\link{scatter_plot}} for creating plots that display
-#'   correctly, \code{\link{print.unicode_ggplot}} for automatic display support.
-#'
-#' @examples
-#' \dontrun{
-#' p <- scatter_plot(...)
-#' ggsave_unicode(p, "myplot.png", width = 6, height = 4, dpi = 300)
-#' }
-#'
-#' @export
-ggsave_unicode <- function(plot, filename, ...) {
-  # Activate showtext for the saving process
-  showtext::showtext_begin()
-  # Ensure showtext is turned off even if an error occurs
-  on.exit(showtext::showtext_end(), add = TRUE)
-
-  # Pass everything to ggsave
-  ggplot2::ggsave(filename = filename, plot = plot, ...)
-}
