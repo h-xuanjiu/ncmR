@@ -6,7 +6,7 @@
 
 ## CHANGES
 
--   `scatter_plot`: removed Unicode characters from axis labels for broader compatibility.
+-   `scatter_plot`: removed Unicode characters from custom legend labels for broader compatibility.
 
 ## REMOVED
 
