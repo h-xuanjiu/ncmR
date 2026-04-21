@@ -2,7 +2,15 @@
 
 ## NEW FEATURES
 
--   feat: add Shiny application with Fit NCM and Plotting modules
+-   feat: add Shiny application with Fit NCM and Plotting modules.
+
+## CHANGES
+
+-   `scatter_plot`: removed Unicode characters from axis labels for broader compatibility.
+
+## REMOVED
+
+-   `print.unicode_ggplot()` and `ggsave_unicode()`: no longer needed after removing Unicode dependency from plotting functions.
 
 
 # ncmR 0.2.0 (2026-04-15)
