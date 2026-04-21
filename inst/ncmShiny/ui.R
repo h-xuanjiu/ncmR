@@ -126,7 +126,60 @@ shiny::tagList(
             bslib::card_header("Predictions (species-level)"),
             DT::DTOutput("predictions_table")
           ),
-          shiny::downloadButton("download_ncm", "Download Results")
+          # 全屏 loading 遮罩（初始隐藏）
+          tags$div(
+            id = "ncm_loading_mask",
+            style = "
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  ",
+            tags$div(
+              style = "
+      width: 50px; height: 50px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    "
+            ),
+            tags$p(
+              "Preparing download...",
+              style = "color: white; margin-top: 15px; font-size: 16px;"
+            )
+          ),
+
+          # 旋转动画 CSS
+          tags$style(HTML("
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+")),
+
+          # 下载按钮（加上自定义 class）
+          shiny::downloadButton("download_ncm", "Download Results", class = "ncm-dl-btn"),
+
+          # 监听点击和接收隐藏消息的 JS
+          tags$script(HTML("
+  // 点击下载按钮时显示 loading
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.ncm-dl-btn')) {
+      document.getElementById('ncm_loading_mask').style.display = 'flex';
+    }
+  });
+
+  // Shiny 服务端通知隐藏 loading
+  Shiny.addCustomMessageHandler('hideNcmLoading', function(msg) {
+    document.getElementById('ncm_loading_mask').style.display = 'none';
+  });
+"))
         )
       )
     ),
@@ -249,14 +302,13 @@ shiny::tagList(
           shiny::actionButton("make_plot", "Generate Plot", class = "btn-success", icon = shiny::icon("chart-line"))
         ),
         bslib::accordion(
-          id = "plot_data_accordion",  # 用于控制折叠
-          open = c("fitting_card", "upload_card"),  # 默认都打开
+          id = "plot_data_accordion", # 用于控制折叠
+          open = c("fitting_card", "upload_card"), # 默认都打开
 
           bslib::accordion_panel(
             title = "NCM Fitting Results",
-            value = "fitting_card",  # 用于标识
+            value = "fitting_card", # 用于标识
             icon = shiny::icon("table"),
-
             shiny::uiOutput("plot_group_selector"),
             shiny::hr(),
             shiny::uiOutput("plot_param_summary"),
@@ -270,19 +322,86 @@ shiny::tagList(
               DT::DTOutput("plot_predictions_table")
             )
           ),
-
           bslib::accordion_panel(
             title = "Uploaded Data Preview",
-            value = "upload_card",  # 用于标识
+            value = "upload_card", # 用于标识
             icon = shiny::icon("upload"),
-
             DT::DTOutput("uploaded_data_preview")
           )
         ),
         bslib::card(
           bslib::card_header("NCM Plot"),
           shiny::plotOutput("ncm_plot", height = "600px"),
-          shiny::actionButton("download_plot_btn", "Download Plot", icon = shiny::icon("download")),
+          # Plot 下载 loading 遮罩（复用之前的样式，独立 ID 防止冲突）
+          tags$div(
+            id = "plot_loading_mask",
+            style = "
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  ",
+            tags$div(
+              style = "
+      width: 50px; height: 50px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #e74c3c;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    "
+            ),
+            tags$p(
+              "Preparing plot...",
+              style = "color: white; margin-top: 15px; font-size: 16px;"
+            )
+          ),
+
+          # 如果之前没有加过旋转动画 CSS，这里需要加（加过了就不用重复）
+          tags$style(HTML("
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+")),
+
+          # 下载按钮加自定义 class
+          shiny::actionButton("download_plot_btn", "Download Plot", icon = shiny::icon("download"), class = "plot-dl-btn"),
+
+          # Plot 下载的 JS 监听
+          tags$script(HTML("
+  // 点击 Plot Modal 的 Download 按钮时显示 loading
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.modal-footer .btn-primary');
+    if (!btn) return;
+    var modalTitle = document.querySelector('.modal-title');
+    if (modalTitle && modalTitle.textContent.trim() === 'Download Plot' && btn.textContent.trim() === 'Download') {
+      document.getElementById('plot_loading_mask').style.display = 'flex';
+    }
+  });
+
+  // 隐藏 loading（出错时调用）
+  Shiny.addCustomMessageHandler('hidePlotLoading', function(msg) {
+    document.getElementById('plot_loading_mask').style.display = 'none';
+  });
+
+  // URL 方式下载：点击链接后立即隐藏 loading（因为浏览器接管了）
+  Shiny.addCustomMessageHandler('download_plot_url', function(msg) {
+    var link = document.createElement('a');
+    link.href = msg.url;
+    link.download = msg.filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // 触发下载后立刻隐藏 loading
+    document.getElementById('plot_loading_mask').style.display = 'none';
+  });
+")),
           style = "height: 680px; max-height: 680px; overflow: hidden; flex-shrink: 0;"
         )
       )

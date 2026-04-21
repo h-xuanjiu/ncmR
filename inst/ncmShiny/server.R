@@ -1,9 +1,22 @@
 #' @importFrom zip zipr
 NULL
 
-
 # server.R
 function(input, output, session) {
+
+  plot_dl_dir <- file.path(tempdir(), "plot_downloads")
+  dir.create(plot_dl_dir, showWarnings = FALSE, recursive = TRUE)
+
+  # 添加资源路由（用正斜杠，Shiny 内部会处理）
+  shiny::addResourcePath("plot_dls", plot_dl_dir)
+
+  # server 函数开头，清理旧文件
+  old_files <- list.files(plot_dl_dir, full.names = TRUE, pattern = "^plot_")
+  if (length(old_files) > 0) {
+    file_age <- as.numeric(difftime(Sys.time(), file.info(old_files)$mtime, units = "hours"))
+    unlink(old_files[file_age > 1])  # 删 1 小时前的
+  }
+
   # 存储数据
   data_vals <- shiny::reactiveValues(
     abundance = NULL,
@@ -237,8 +250,7 @@ function(input, output, session) {
     )
   })
 
-  # 当拟合结果更新时，渲染组选择器、参数摘要和表格
-  # 当拟合结果更新时，渲染组选择器、参数摘要和表格
+
   shiny::observeEvent(data_vals$ncm_result, {
     res <- data_vals$ncm_result
     req(res)
@@ -390,6 +402,9 @@ function(input, output, session) {
       }
     },
     content = function(file) {
+      on.exit({
+        session$sendCustomMessage(type = "hideNcmLoading", message = list())
+      })
       res <- data_vals$ncm_result
       req(res)
 
@@ -397,8 +412,14 @@ function(input, output, session) {
 
       # 创建临时根目录
       temp_root <- tempdir()
-      zip_dir <- file.path(temp_root, paste0("ncm_export_", Sys.getpid()))
+      zip_dir <- tempfile(pattern = "ncm_export_", tmpdir = temp_root)
       dir.create(zip_dir, showWarnings = FALSE)
+
+      old_wd <- getwd()
+      on.exit({
+        setwd(old_wd)
+        unlink(zip_dir, recursive = TRUE)
+      }, add = TRUE)
 
       if (is_grouped) {
         # 分组情况：遍历每个组
@@ -514,8 +535,6 @@ function(input, output, session) {
         }
       }
 
-      # 打包：切换到 zip_dir，打包其所有内容（不包含 zip_dir 本身）
-      old_wd <- getwd()
       setwd(zip_dir)
       # 列出顶层所有文件和目录
       all_items <- list.files(zip_dir, all.files = FALSE, recursive = FALSE, include.dirs = TRUE)
@@ -528,10 +547,6 @@ function(input, output, session) {
         files = all_items, recurse = TRUE,
         include_directories = TRUE, mode = "mirror"
       )
-      setwd(old_wd)
-
-      # 清理临时目录
-      unlink(zip_dir, recursive = TRUE)
     }
   )
 
@@ -807,13 +822,13 @@ function(input, output, session) {
       shiny::textInput("dl_filename", "File name", value = paste0("plot_", Sys.Date())),
       shiny::selectInput("dl_format", "Format",
                          choices = c("PDF" = "pdf", "PNG" = "png", "JPEG" = "jpeg",
-                                     "TIFF" = "tiff", "SVG" = "svg"),
+                                     "TIFF" = "tiff"),
                          selected = "pdf"),
       shiny::numericInput("dl_width", "Width (inches)", value = 10, min = 1, step = 0.5),
       shiny::numericInput("dl_height", "Height (inches)", value = 8, min = 1, step = 0.5),
       shiny::conditionalPanel(
-        condition = "input.dl_format != 'pdf' && input.dl_format != 'svg'",
-        shiny::numericInput("dl_dpi", "DPI", value = 300, min = 72, max = 1200, step = 50)
+        condition = "input.dl_format != 'pdf'",
+        shiny::numericInput("dl_dpi", "DPI", value = 300, min = 72, max = 2000, step = 50)
       ),
 
       footer = shiny::tagList(
@@ -834,69 +849,36 @@ function(input, output, session) {
     fname <- input$dl_filename
     w <- input$dl_width
     h <- input$dl_height
-    dpi <- if (!is.null(input$dl_dpi)) input$dl_dpi else 300
+    raw_dpi <- if (!is.null(input$dl_dpi)) as.numeric(input$dl_dpi) else 300
+    dpi <- min(max(raw_dpi, 72), 2000)
 
     safe_name <- gsub("[^A-Za-z0-9_.-]", "_", fname)
     if (!grepl(paste0("\\.", fmt, "$"), safe_name)) {
       safe_name <- paste0(safe_name, ".", fmt)
     }
 
-    temp_root <- tempdir()
-    temp_file <- file.path(temp_root, paste0("plot_", Sys.getpid(), "_", format(Sys.time(), "%Y%m%d%H%M%S"), ".", fmt))
+    # 唯一文件名，防止多用户冲突
+    temp_file <- tempfile(pattern = "plot_", tmpdir = plot_dl_dir, fileext = paste0(".", fmt))
 
     tryCatch({
-      if (fmt %in% c("pdf", "svg")) {
-        ggplot2::ggsave(temp_file, plot = p, width = w, height = h, device = fmt)
+      if (fmt == "pdf") {
+        ggplot2::ggsave(temp_file, plot = p, width = w, height = h, device = cairo_pdf)
       } else {
         ggplot2::ggsave(temp_file, plot = p, width = w, height = h, dpi = dpi, device = fmt)
       }
 
-      base64_encode <- function(x) {
-        chars <- c(LETTERS, letters, 0:9, "+", "/")
-        n <- length(x)
-        if (n == 0) return("")
-
-        # 补齐到 3 的倍数
-        pad <- (3 - n %% 3) %% 3
-        if (pad > 0) x <- c(x, raw(pad))
-
-        # 24-bit 分组转 6-bit
-        x24 <- as.integer(x)
-        i <- seq(1, length(x24), by = 3)
-        y <- bitwShiftL(x24[i], 16) + bitwShiftL(x24[i+1], 8) + x24[i+2]
-
-        # 提取 6-bit 块
-        b1 <- bitwAnd(bitwShiftR(y, 18), 63) + 1
-        b2 <- bitwAnd(bitwShiftR(y, 12), 63) + 1
-        b3 <- bitwAnd(bitwShiftR(y, 6), 63) + 1
-        b4 <- bitwAnd(y, 63) + 1
-
-        res <- paste0(chars[b1], chars[b2], chars[b3], chars[b4], collapse = "")
-
-        # 添加 padding
-        if (pad > 0) {
-          substr(res, nchar(res) - pad + 1, nchar(res)) <- substr("===", 1, pad)
-        }
-
-        res
-      }
-
-      # 使用
-      file_data <- paste0(
-        "data:", mime_type(fmt), ";base64,",
-        base64_encode(readBin(temp_file, "raw", file.info(temp_file)$size))
-      )
-
-      # 发送给浏览器执行下载
-      session$sendCustomMessage("download_plot", list(
-        filename = safe_name,
-        data = file_data
+      session$sendCustomMessage("download_plot_url", list(
+        url = paste0("plot_dls/", basename(temp_file)),  # 确认前缀是 plot_dls
+        filename = safe_name
       ))
 
-      # 清理临时文件
-      unlink(temp_file)
+      # 300 秒后自动清理临时文件
+      later::later(function() {
+        if (file.exists(temp_file)) unlink(temp_file)
+      }, delay = 300)
 
     }, error = function(e) {
+      session$sendCustomMessage(type = "hidePlotLoading", message = list())
       shiny::showNotification(paste("Error saving plot:", e$message), type = "error")
     })
   })
@@ -908,7 +890,6 @@ function(input, output, session) {
            png = "image/png",
            jpeg = "image/jpeg",
            tiff = "image/tiff",
-           svg = "image/svg+xml",
            "application/octet-stream"
     )
   }
