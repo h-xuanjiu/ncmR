@@ -39,7 +39,7 @@ function(input, output, session) {
         df <- df[, -1, drop = FALSE]
       }
     }
-    df <- as.data.frame(lapply(df, function(x) as.numeric(as.character(x))))
+    df[] <- lapply(df, function(x) as.numeric(as.character(x)))
     return(df)
   }
 

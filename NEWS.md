@@ -1,3 +1,9 @@
+# ncmR 0.3.1 (2026-04-21)
+
+## BUG FIXES
+
+-   Fixed row name loss when converting data frame columns to numeric during file upload.
+
 # ncmR 0.3.0 (2026-04-19)
 
 ## NEW FEATURES
