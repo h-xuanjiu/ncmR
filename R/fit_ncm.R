@@ -49,8 +49,13 @@ fit_ncm <- function(otu, grp = NULL, group_col = "group", groups = NULL,
     stop("Package 'dplyr' is required for data manipulation.")
   }
 
-  otu <- as.data.frame(otu)
-  if (nrow(otu) == 0) stop("otu has no rows.")
+  if (!is.data.frame(otu)) {
+    otu <- as.data.frame(otu, stringsAsFactors = FALSE)
+  }
+
+  if (nrow(otu) == 0) {
+    stop("otu has no rows.")
+  }
 
   fit_one <- function(spp_mat, group_name = NULL, ...) {
     spp_mat <- spp_mat[, colSums(spp_mat) > 0, drop = FALSE]
@@ -89,7 +94,6 @@ fit_ncm <- function(otu, grp = NULL, group_col = "group", groups = NULL,
     dots <- list(...)
 
     if (!"start" %in% names(dots)) {
-
       start_values <- list(m = c(0.01, 0.05, 0.1, 0.5))
     } else {
       start_values <- list(m = dots[["start"]][["m"]])
@@ -140,7 +144,8 @@ fit_ncm <- function(otu, grp = NULL, group_col = "group", groups = NULL,
     freq_pred <- stats::pbeta(d, N * m_est * p_vec, N * m_est * (1 - p_vec), lower.tail = FALSE)
 
     n_samples <- nrow(spp_mat)
-    ci_df <- Hmisc::binconf(freq_pred * n_samples, n_samples,
+    ci_df <- Hmisc::binconf(
+      freq_pred * n_samples, n_samples,
       alpha = 0.05,
       method = "wilson", return.df = TRUE
     )
@@ -185,7 +190,9 @@ fit_ncm <- function(otu, grp = NULL, group_col = "group", groups = NULL,
     return(fit_one(otu, group_name = NULL, ...))
   }
 
-  grp <- as.data.frame(grp)
+  if (!is.data.frame(grp)) {
+    grp <- as.data.frame(grp, stringsAsFactors = FALSE)
+  }
   if (!group_col %in% colnames(grp)) {
     stop("Column '", group_col, "' not found in grp.")
   }
