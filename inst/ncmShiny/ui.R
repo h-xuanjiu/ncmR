@@ -101,7 +101,63 @@ shiny::tagList(
             )
           ),
           # 运行按钮
-          shiny::actionButton("run_ncm", "Fit NCM", class = "btn-primary", icon = shiny::icon("play"))
+          # 旋转动画 CSS（如果页面已有可省略，但为保证独立最好加上）
+          tags$style(HTML("
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  ")),
+
+          # ========== Fit NCM 按钮的 loading 遮罩 ==========
+          tags$div(
+            id = "run_ncm_loading_mask",
+            style = "
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    ",
+            tags$div(
+              style = "
+        width: 50px; height: 50px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      "
+            ),
+            tags$p(
+              "Fitting NCM model, please wait...",
+              style = "color: white; margin-top: 15px; font-size: 16px;"
+            )
+          ),
+
+          # 按钮：添加自定义 class "run-ncm-btn" 方便 JS 定位
+          shiny::actionButton("run_ncm", "Fit NCM",
+            class = "btn-primary run-ncm-btn",
+            icon = icon("play")
+          ),
+
+          # JS：点击按钮显示遮罩，并监听 Shiny 消息隐藏遮罩
+          tags$script(HTML("
+    // 点击按钮时显示遮罩
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.run-ncm-btn')) {
+        document.getElementById('run_ncm_loading_mask').style.display = 'flex';
+      }
+    });
+
+    // Shiny 服务端通知隐藏遮罩
+    Shiny.addCustomMessageHandler('hideRunNcmLoading', function(msg) {
+      document.getElementById('run_ncm_loading_mask').style.display = 'none';
+    });
+  "))
         ),
         bslib::accordion(
           bslib::accordion_panel(

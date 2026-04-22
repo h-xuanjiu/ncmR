@@ -234,11 +234,13 @@ function(input, output, session) {
           return_model = FALSE
         )
 
-        # 存储结果
         data_vals$ncm_result <- res
 
         shiny::removeNotification(id = "fit_msg")
         shiny::showNotification("Fitting completed.", type = "message")
+
+        # 隐藏 loading 遮罩（成功时）
+        session$sendCustomMessage("hideRunNcmLoading", list())
 
         session$sendCustomMessage(type = "collapse_data_preview", message = list())
       },
@@ -246,6 +248,9 @@ function(input, output, session) {
         shiny::removeNotification(id = "fit_msg")
         shiny::showNotification(paste("Fitting failed:", e$message), type = "error")
         data_vals$ncm_result <- NULL
+
+        # 隐藏 loading 遮罩（失败时）
+        session$sendCustomMessage("hideRunNcmLoading", list())
       }
     )
   })
