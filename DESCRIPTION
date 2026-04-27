@@ -17,6 +17,7 @@ Depends:
     R (>= 3.5)
 Imports: 
     bslib,
+    colourpicker,
     dplyr,
     DT,
     ggplot2 (>= 4.0.0),
