@@ -1,3 +1,6 @@
+#' @importFrom colourpicker colourInput
+NULL
+
 #' Launch the ncmR Shiny Application
 #'
 #' @description
